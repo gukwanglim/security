@@ -1,0 +1,16 @@
+1. security 프로젝트를 생성하여 application.yml을 작성하고(사진 1번, mariadb를 사용(이전에 데이터베이스를 생성한다.(사진 1-2번))) controller 페키지를 생성하여 그 안에 
+    IndexController 클래스를 만든다.        (사진 2번)
+
+    추가적으로 이번에 사용하는 템플릿은 spring에서 권장하고 있는 Mustache를 사용한다.
+        Mustache의 기본 폴더는 src/main/resource/로 잡혀 있으며, 이를 사용하기 위해 뷰리졸버 설정은 prefix : templates, suffix : mustache로 설정한다.   (사진 3번)
+        (Mustache를 설치하게 된다면 (사진 4번) 기본적으로 설정이 적용되어 있어서 굳이 사진 3번과 같이 작성해줄 필요는 없다.)
+
+        다음으로 index.html 파일을 생성한다.
+        하지만, 현재 사용하고 있는 Mustache는 src/main/resource/templates/index.mustache로 파일을 찾게 된다.
+        때문에 index.html을 찾도록 설정을 변경할 필요가 있다.
+
+2. Mustache가 html을 인식할 수 있도록 만들기 위해서 config 페키지를 생성하여 WebMvcConfig 클래스를 생성하여 IoC로 등록하기 위해 @Configuration 어노테이션을 준다.   (사진 4번)
+    WebMvcConfig는 WebMvcConfigurer로 implements되며 configureViewResolvers를 overriding 한다.
+    여기서 다른 설정은 기존 설정처럼 작성하지만 setSuffix 부분을 ".html"으로 설정하면 된다. 
+
+3. 이제 spring boot app을 실행하면 로그인 화면이 나타나고 user로 로그인을 하게 되면 index.html이 브라우져에 나타난다.
