@@ -1,0 +1,28 @@
+1. 회원가입을 진행하기 위해 우선적으로 로그인 페이지 생성(사진 1번) 추가로 User 테이블을 생성한다.     (사진 2번)
+
+2. 회원가입을 위해 /joinForm으로 이동할 수 있도록 코드를 작성하고(사진 3번) joinForm.html을 생성한다.       (사진 4번)
+    joinForm.html에서는 데이터를 받게 되면 join으로 이동할 수 있도록 action을 주고, 이 데이터는 post로 받아온다.
+
+    spring boot app을 실행하여 joinForm에서 값을 입력하게 되면, join 페이지로 넘어가고(사진 5번) 넘겨받은 데이터를 확인하기 위해 @PostMapping으로 값을 받아와 확인할 수 있다. (사진 6,7번)
+
+3. 간단한 구현을 위해 service를 생성하지 않고 repository 패키지를 생성하여 UserRepository 인터페이스를 생성한다.        (사진 8번)
+    (타입은 User, User 모델의 PK는 Integer이다.)
+    (JpaRepository가 기본적인 CRUD 함수를 가지고 있다. 또한, @Repository 어노테이션이 없어도 IoC가 된다.(JpaRepository를 상속했기 때문에))
+
+    이렇게 생성한 레파지토리를 사용하기 위해서는 @Autowired 어노테이션을 이용한다.      (사진 9번)
+
+    사용하는 방법은 사진 10번과 같이 userRepository.save(user);를 이용하면 된다.(user.setRole("ROLE_USER"); 부분은 아직 구현하지 않아서 직접 넣어준다.)
+
+    이런 방식으로 회원가입을 구현할 수 있지만, 시큐리티로 인해 비밀번호의 해시화가 필요하다.
+
+4. password 해시화를 위해 SecurityConfig.java에서 BCryptPasswordEncoder를 bean으로 등록한다.            (사진 11번)
+    이렇게하면 해당 메서드의 리턴되는 오브젝트를 IoC로 등록해준다.(@Autowired를 사용하면 어디서든 사용 가능 (사진 12번))
+
+    password 해시를 위해 
+        String rawPassword = user.getPassword();으로 실제로 작성한 password를 가져오고
+        String encPassword = bCryptPasswordEncoder.encode(rawPassword);으로 가져온 password를 해시처리 한 뒤,
+        user.setPassword(encPassword);으로 해시처리된 password를 저장해준다.
+
+        마지막으로 return "redirect:/loginForm";을 사용하여 회원가입이 완료되면 로그인 페이지로 넘겨준다.           (사진 13번)
+
+    실제 회원가입 정보를 입력하고 버튼을 누르게 되면 데이터베이스에 값이 저장됨을 확인할 수 있다.       (사진 14번)
