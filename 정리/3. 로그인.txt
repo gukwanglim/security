@@ -1,0 +1,71 @@
+1. 로그인을 진행하기 위해 SecurityConfig.java에서 코드 작성         (사진 1번)
+    
+    .loginProcessingUrl("/login")   : login 주소가 호출되면 시큐리티가 낚아채서 대신 로그인을 진행.
+    .defaultSuccessUrl("/")         : 로그인이 완료되면 "/" 주소로 이동.
+
+    login 주소를 낚아채기 위해 loginForm.html에서 action을 "/login"으로 준다.       (사진 2번)
+        -> username, password를 들고 /login으로 이동하면 시큐리티가 낚아채서 로그인을 진행
+
+2. 위 과정을 진행하기 위해서 몇 단계의 준비가 필요하다.
+
+    config 패키지 아래에 auth 패키지 생성.
+        auth 패키지 안에 PrincipalDetails 클래스 생성.
+            -> 시큐리티가 /login 주소 요청을 낚아채서 로그인을 진행
+            -> 로그인 진행이 완료가 되면 시큐리티 session에 넣어줌(Security ContextHolder)
+                (이때 들어갈 수 있는 오브젝트 타입의 형태가 정해져있다. -> Authenticated 객체, 또한, Authenticated 안에는 User의 정보가 들어있어야 한다.)
+                    (이때도 User 오브젝트의 타입이 UserDetails 타입으로 정해져있다.)
+
+        => Security Session => Authenticated => UserDetails(PrincipalDetails에서 implements로 사용하면 된다.)
+
+            1. (PrincipalDetails에 implements UserDetails를 적용한 뒤, overriding을 하게 되면 사진 3번과 같이 코드가 작성된다.)
+                    (이때, 현재 사용되고 있는 User의 정보를 가져오기 위해 콤포지션을 사용한다. (사진 4번)
+                    콤포지션을 사용하기 위해서는 생성자를 만들어 User의 정보를 넣어 가져온다.   (사진 5번))
+
+                public Collection<? extends GrantedAuthority> getAuthorities() {} 부분은 해당 유저의 권한을 리턴하는 부분이다.
+                    현재 유저의 권한은 Role으로 들어가 있는데 User에서 사용하는 권한의 타입은 String이다.
+                    하지만, Collection에서 사용해야하는 타입으로 만들기 위해서 Collection<GrantedAuthority>을 사용한다.     (사진 6번)
+
+                        Collection<GrantedAuthority>는 ArrayList로 받아오게 되는데 (ArrayList는 Collection의 자식) 여기서 다시 GrantedAuthority 타입을 사용해야하므로 
+                            collect.add(new GrantedAuthority)을 작성한다.
+                            이때, new GrantedAuthority를 사용하게 되면 override가 사용되어 return 값을 user.getRole()으로 설정해준다.
+
+                        나머지 부분은 getPassword, getUserName을 사용하여 가져오고, true로 변경해준다.      (사진 7번)
+
+        여기까지가 UserDetails를 설정한 부분이다.
+
+        이번에는 Authenticated를 설정하도록 한다.
+
+            2. auth 패키지에서 PrincipalDetailsService 클래스를 생성한다.               (사진 8번)
+                UserDetails를 설정했을 때와 비슷하게 implements UserDetailsService를 진행하고 override를 한다.
+                    이때, @Service 어노테이션을 주게 되는데 이는 
+                    시큐리티 설정에서 loginProcessingUrl("/login")으로 걸어 놓았기 때문에 "/login" 요청이 오게되면 
+                    자동으로 UserDetailsService 타입으로 IoC 되어 있는 loadUserByUsername 함수가 실행하도록 만든다.
+
+                    이때 중요한 것은 loadUserByUsername(String username)으로 적혀 있는 것을 확인할 수 있는데
+                        여기서 username은 시큐리티에서 정해진 것으로 만약, 로그인으로 받아오는 정보를 username2와 같이 변경한다면 loadUserByUsername으로 받아올 수 없게 된다.
+
+                        (만약, username2와 같은 방식으로 변경하고 싶다면 SecurityConfig.java에서 http.usernameParameter("username2")와 같이 설정을 추가해야 한다.)
+
+    3. 이제 정보를 작성하고 로그인 버튼을 누르게 되면 "/login"이 동작하게 되고 스프링은 IoC 컨테이너에서 UserDetails로 등록되어 있는 타입을 찾는다.
+        다음으로 loadUserByUsername을 찾게 되고 이때 넘어오게 되는 username 파라미터를 가지고 온다.
+
+        이때 username을 가져오기 위해서는 UserRepository를 @Autowired 하고, findByUsername(username)을 사용하여 가져와야 한다.      (사진 9번)
+        하지만 현재 UserRepository에서는 findByUsername와 같은 메서드가 존재하지 않는다.
+
+        때문에 UserRepository.java에서 findByUsername 메서드를 선언해야 한다.       (사진 10번)
+            (select * from user where username = 1?으로 호출 (1? 부분에 username이 들어온다.)) => jpa query methods
+
+
+        UserRepository에 findByUsername 메서드를 작성했다면 다시 PrincipalDetailsService.java로 돌아와서 
+            userEntity가 문제 없이 사용됨을 확인하고 
+            if 구문을 사용하여 username이 null일 경우 PrincipalDetails에 userEntity를 사용한다.
+
+
+
+        이렇게하면 Authenticated 내부에 UserDetails가 들어가게 되고
+        Authenticated는 시큐리티 session 내부에 들어가게 된다.
+
+
+4. 코드를 모두 작성하면 로그인이 문제없이 실행된다.
+    이때, loginForm에서 로그인을 실행하게 된다면 "/" 페이지로 이동하게 되는데 만약, "/user" 페이지에 들어가 로그인을 실행하게 된다면 바로 "/user" 페이지로 들어가게 된다.
+    이것은 SecurityConfig.java에서 작성한 .defaultSuccessUrl("/");의 기능이다.
