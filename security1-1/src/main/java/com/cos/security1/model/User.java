@@ -32,6 +32,12 @@ public class User {
 	@Column
 	private String role;
 	
+	@Column
+	private String provider;
+	
+	@Column
+	private String providerId;
+	
 	@CreationTimestamp
 	private Timestamp createDate;
 	

@@ -1,0 +1,14 @@
+1. 권한 처리를 위해 manager, admin으로 회원가입을 진행한다.     (사진 1번)
+    하지만, manager와 admin이 가지고 있는 권한은 일반 회원가입으로 진행되어 user로 되어있다.
+    때문에 직접 쿼리문을 작성하여 권한을 변경해준다.        (사진 2,3번)
+
+    manager의 권한을 부여했기 때문에 이전 일반 로그인에서 들어갈 경우 403 에러가 뜨던 manager 페이지에 접속할 수 있게 되었다.       (사진 4번)
+
+2. 권한 처리를 진행할 때, SecurityConfig.java에서 http를 사용하여 특정 주소로 들어가게 될 경우 조건을 설정할 수 있지만,
+    
+    사진 5번과 같이 @EnableGlobalMethodSecurity 어노테이션의 securedEnabled = true를 활용하게 된다면 (securedEnabled = true : secured 어노테이션 활성화)
+    controller에서 @Secured("권한")으로 어노테이션을 작성하게 되면 해당 권한을 가지고 있는 사용자만 이 주소로 이동할 수 있다.       (사진 6번)
+
+    또한, 이전부터 적혀있던 prePostEnabled = true에서도(사진 7번)
+    @PreAuthorize("hasRole('권한')")를 사용하여 여러 개의 조건을 걸 수 있다.        (사진 8번) 
+        (@PreAuthorize의 경우에는 함수가 실행되기 전에 동작하는 것이다. 반대로 함수가 실행 된 후에 동작하는 것은 @PostAuthorize 이다.)
