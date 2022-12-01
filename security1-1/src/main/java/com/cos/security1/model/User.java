@@ -10,6 +10,7 @@ import javax.persistence.Id;
 
 import org.hibernate.annotations.CreationTimestamp;
 
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -17,6 +18,7 @@ import lombok.NoArgsConstructor;
 @Entity
 @Data
 @NoArgsConstructor
+@AllArgsConstructor
 public class User {
 
 	@Id        // Primary key
@@ -30,17 +32,17 @@ public class User {
 	private String password;
 	
 	@Column
-	private	String email;
-	
-	@Column
-	private String role;
-	
-	@Column
 	private String provider;
 	
 	@Column
 	private String providerId;
 	
+	@Column
+	private	String email;
+	
+	@Column
+	private String role;
+
 	@CreationTimestamp
 	private Timestamp createDate;
 
