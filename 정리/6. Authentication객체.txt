@@ -1,0 +1,41 @@
+1. 이전 PrincipalOauth2UserService.java에서 sysout을 사용하여 확인한 부분에 대해 설명하자면
+
+    userRequest     : 구글 로그인 버튼 -> 구글 로그인 창 -> 로그인 완료 -> code를 return(OAuth-client 라이브러리) -> AccessToken 요청 까지가 userRequest의 정보이다.
+                        여기서 회원 프로필을 받아와야 하는데 이때, loadUser() 함수가 사용된다.
+
+                        즉, loadUser() 함수 호출 -> 구글에서 회원 프로필 받아옴
+
+    userRequest.getClientRegistration()     : registrationId로 어떤 OAuth로 로그인했는지 확인 가능.
+
+2. 확인을 위해 PrincipalOauth2UserService.java와 IndexController.java에 코드 추가        (사진 1,2번)
+
+    코드 작성을 완료하고 일반 로그인으로 /test/login 페이지에 들어가면 사진 3번과 같이 출력을 확인 가능.
+    이때, authentication.getPrincipal()의 타입은 object이다.        (사진 4번)
+
+    이 타입을 변경해주기 위해 PrincipalDetails를 가져와 사용하게 되면 (사진 5번) 일반 로그인을 했을 경우 사진 6번과 같이 데이터를 가져올 수 있게 된다. (PrincipalDetails.java에서 @Data 어노테이션 사용 필요)
+
+    추가적으로 @AuthenticationPrincipal UserDetails userDetails을 사용하게 되면 user의 정보를 가져올 수 있다.   (사진 6,7번)
+        그런데 PrincipalDetails에서 UserDetails를 implements 했기 때문에 @AuthenticationPrincipal PrincipalDetails userDetails으로 사용할 수 있다.     (사진 8번)
+            대신 userDetails.getUsername() 이 아닌 userDetails.getUser()으로 사용해야한다.      (사진 9번)
+                (회원가입을 하기 위해서는 user 오브젝트가 필요하다. 하지만, UserDetails에서는 user 오브젝트가 존재하지 않는다.(아래에 적혀있는 oAuth2User도 마찬가지)
+                하지만, 현재 getUser()을 사용할 수 있는 이유는 PrincipalDetails에서 user 오브젝트를 품어 놓음.  (사진 18번) 또한, implements를 사용하여 UserDetails, oAuth2User를 사용)
+
+3. 구글 로그인을 실행한 후, /test/login으로 들어가게 되면 오류가 발생한다.          (사진 10번)
+    이것은 PrincipalDetails 타입을 사용하지 않기 때문에 발생하는 문제이다.
+
+    이 문제를 해결하기 위해서는 /test/oauth/login 주로로 GetMapping을 하고, OAuth2User 타입을 준다.
+    user의 정보는 oAuth2User.getAttributes()으로 불러올 수 있다.                                    (사진 11,12번)
+
+    일반 로그인과 같이 @AuthenticationPrincipal를 사용하게 되면 OAuth2User 타입으로 정보를 가져올 수 있게 된다.     (사진 13,14번)
+
+4. 정리하자면 
+
+    스프링 시큐리티는 자신만의 세션(시큐리티 세션)을 가지고 있으며, 이 세션에 들어갈 수 있는 타입은 Authentication 객체 뿐이다.
+    이 Authentication 객체 안에는 UserDetails와 OAuth2User 타입이 들어갈 수 있다.
+    (일반 로그인의 경우에는 UserDetails으로 들어가게 되며, 구글, 페이스북, 카카오와 같은 로그인을 하게 되면 OAuth2User로 들어가게 된다.)
+
+    하지만 이렇게 사용하게 된다면 user에 대한 정보를 가져와야 할 경우에 두 가지를 모두 고려하여 코드를 작성해야 한다.(2, 3번에서 했던 방식으로 하나는 UserDetails를, 다른 하나는 OAuth2User를 사용해야한다.)
+    이 문제를 해결하기 위해서는 새로운 클래스를 생성하여 UserDetails와 OAuth2User를 implements 하여 사용하면 된다.
+
+    현재 프로젝트에서는 PrincipalDetails 안에 UserDetails가 implements 되어 있다.
+    때문에 PrincipalDetails.java에서 OAuth2User를 추가로 implements 하고(override 필요) 유저의 정보가 필요한 곳에 PrincipalDetails 타입을 사용하면 된다.        (사진 15, 16, 17번)

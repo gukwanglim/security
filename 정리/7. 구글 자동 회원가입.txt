@@ -1,0 +1,21 @@
+1. PrincipalDetails.java에서 OAuth2User를 implements하여 사용하기 위해서 먼저, private Map<String, Object> attributes;으로 콤포지션 한다.
+    또한, 일반 로그인과 OAuth 로그인이 다르기 때문에 생성자를 하나 더 만들어 attributes를 사용할 수 있게 해준다.            (사진 1번)
+
+    이때, implements OAuth2User를 사용하면서 override된 getAttributes()는 attributes를 return하게 만들어준다.       (사진 2번)
+
+2. 구글 로그인의 후처리는 PrincipalOauth2UserService에서 진행한다.(실제 후처리하여 사용하는 곳은 SecurityConfig.java이다.)
+    후처리(강제 회원가입)를 위해 PrincipalOauth2UserService.java에서 
+        provider, providerId, username, password, email, role을 설정한다.       (사진 3번)
+        여기서 password의 경우는 구글에서 프로필을 가져오게 되면 비밀번호는 사용하지 않은 상태로 로그인이 진행되는 것이므로 임의의 비밀번호를 부여한다.
+            (이때, 보안을 위해 해시처리를 실행하기 위해 BCryptPasswordEncoder를 @Autowired 하여 사용한다.)
+
+    만약, 이미 회원가입이 완료된 상태라면 다시 한번 회원가입을 진행하는 절차를 없애기 위해 UserRepository를 @Autowired 하여 findByUsername으로 동일한 username이 존재하는지 확인한다. (사진 4번)
+        존재하지 않는 회원이라면 회원가입을 실행시키기 위해 User 테이블에서 우클릭 - Source - Generate Constructor using Fields로 코드를 작성하고(사진 5번)
+        @Builder 어노테이션을 적용한 뒤, 다시 PrincipalOauth2UserService.java로 돌아와 if 구문으로 buile를 실행한다.        (사진 6번)
+            여기서 마지막 return은 PrincipalDetails(userEntity, oauth2User.getAttributes())를 사용해야한다.         (사진 7번)
+
+3. 실제 코드가 잘 작동하는지 IndexController.java에서 sysout을 찍어보면     (사진 8번) 
+    순환 오류 발생 : PrincipalOauth2UserService.java에서 BCryptPasswordEncoder를 @Autowired 할 때, SecurityConfig.java와 연속으로 참조를 하면서 발생 (사진 9번)
+    해결 방법을 찾지 못해 일단은 PrincipalOauth2UserService.java의 BCryptPasswordEncoder를 사용하지 않은 상태로 코드를 진행
+
+    sysout을 살펴보면 데이터베이스에 담겨있는 user의 정보가 출력된 것을 확인할 수 있다.     (사진 10번)
