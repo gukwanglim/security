@@ -1,4 +1,43 @@
 1. JWT 프로젝트를 생성.
-    https://mvnrepository.com 에서 jwt를 검색하여 Java JWT를 복사하여 사용      (사진 1,2번)
+    https://mvnrepository.com 에서 jwt를 검색하여 Java JWT를 복사하여 사용.      (사진 1,2번)
 
-    application.yml 작성    (사진 3번)
+    application.yml 작성.    (사진 3번)
+
+    controller, model 패키지 생성.
+
+    model의 User 테이블에는 roles를 받을 수 있는데(USER, ADMIN 등) getRoleList()로 불러올 경우, 그 값이 1개 이상이라면 ,을 기준으로 분간.
+        만약, 값이 존재하지 않는다면 null으로 받을 수 있게 비어있는 리스트를 생성하여 만든다.               (사진 4,5번)
+
+2. config 패키지를 생성하고, SecurityConfig.java를 작성.(spring boot의 버전을 2.7.3, spring-core의 버전을 5.3.22로 낮춰 사용)    (사진 6번)
+
+3. config 패키지 안에 CorsConfig.java를 작성한다.       (사진 7번)
+    이때 사용하는 CorsFilter는 security에서 제공하는 필터를 사용한다. (import org.springframework.web.filter.CorsFilter;)
+    또한, UrlBasedCorsConfigurationSource는 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;을 사용해야 마지막 return에서 CorsFilter()의 () 안에 값을 넣을 수 있다.
+
+        .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS) 
+                : STATELESS 방식은 세션을 사용하지 않겠다는 뜻이다. 기본적으로 웹은 STATELESS 방식을 사용한다. 이러한 STATELESS를 STATEFULL 처럼 사용하기 위해서 쿠키를 생성하는데 그 방식을 사용하지 않는다는 것이다.
+
+        .formLogin().disable()              : 폼로그인을 사용하지 않는다.
+        .httpBasic().disable()              
+                : header의 Authorization이라는 키값에 ID, Password를 담아서 보내게 된다. 이러한 방식을 httpBasic이라고 한다. 
+                    하지만 이러한 방식은 ID와 Password가 암호화되지 않아 노출될 수 있다. 이것을 해결하기 위한 방법이 https 서버를 사용하는 것이다.
+
+                    반면, 현 프로젝트에서 사용하려고 하는 방식은 Authorization 안에 토큰을 넣는 방식이다. 이 토큰은 노출이 되어도 ID와 Password가 직접 노출되는 것이 아니기 때문에 위험부담이 적다.
+                    이러한 방식을 Bearer라고 한다.(토큰에는 유효시간이 존재(이 토큰을 사용할 때 JWT를 이용한다.))
+
+                    때문에 httpBasic을 비활성화한다.
+
+        config.setAllowCredentials(true);   : 내 서버가 응답을 할 때, json에서 자바스크립트를 처리할 수 있게 할지를 설정하는 것.
+                                                (ajax와 같은 라이브러리로 데이터를 요청할 경우 응답을 자바스크립트가 받을 수 있게 할 것인지 결정, false할 경우 자바스크립트로 요청할 때 응답이 오지 않는다.)
+        config.addAllowedOrigin("*");       : 모든 ip의 응답을 허용.
+        config.addAllowedHeader("*");       : 모든 header의 응답을 허용
+        config.addAllowedMethod("*");	    : 모든 post, get, put, delete, patch 요청을 허용
+
+    CorsConfig.java에서 필터를 설정했으니 설정한 필터를 걸어줘야 한다.
+
+4. 설정한 필터를 걸어주기 위해 다시 SecurityConfig.java로 돌아와 @Configuration, @EnableWebSecurity, @RequiredArgsConstructor 어노테이션을 걸어주고,
+    CorsConfig.java에서 정의한 필터 CorsFilter를 private final로 가져와(@Bean으로 등록되어 있기 때문에 가져올 수 있다.) .addFilter(corsFilter)를 사용하여 필터를 적용한다.      (사진 8번)
+        (추가로 controller에서 @CrossOrigin을 사용하여 필터를 걸어줄 수 있지만, 인증이 필요 없는 경우에만 사용 가능하다. 시큐리티 필터에 등록 인증이 필요한 경우 위의 방식 사용)
+
+    이렇게 코드를 작성하고 http://localhost:8080/home 으로 들어가보면 이제는 user와 password의 사용없이 들어갈 수 있게 된다.
+        
