@@ -2,6 +2,7 @@ package com.cos.jwt.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -9,6 +10,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 import org.springframework.web.filter.CorsFilter;
 
+import com.cos.jwt.config.jwt.JWTAuthenticationFilter;
 import com.cos.jwt.filter.MyFilter1;
 import com.cos.jwt.filter.MyFilter3;
 
@@ -31,6 +33,7 @@ public class SecurityConfig {
 			.addFilter(corsFilter)		// controller에서 @CrossOrigin을 사용하여 필터를 걸어줄 수 있지만, 인증이 필요 없는 경우에만 사용 가능하다. 
 			.formLogin().disable()
 			.httpBasic().disable()
+			.addFilter(new JWTAuthenticationFilter(authenticationManager()))
 			.authorizeRequests()
 			.antMatchers("/api/v1/user/**")
 			.access("hasRole('ROLE_USER') or hasRole('ROLE_ADMIN') or hasRole('ROLE_MANAGER')")
